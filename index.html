@@ -3,150 +3,117 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Scroll Resume + Search Demo</title>
+  <title>Scroll Resume Demo</title>
   <style>
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto;
-      margin: 0;
-      background: #f8f8f8;
-    }
-    header {
-      position: sticky;
-      top: 0;
-      background: white;
-      padding: 12px 16px;
-      border-bottom: 1px solid #ccc;
-      display: flex;
-      gap: 10px;
-      z-index: 10;
-    }
-    input {
-      padding: 8px;
-      font-size: 14px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      flex: 1;
-    }
-    #itemList {
-      height: calc(100vh - 60px);
-      overflow-y: scroll;
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
       padding: 20px;
+      max-width: 800px;
+      margin: auto;
     }
+
     .item {
+      margin-bottom: 40px;
       padding: 10px;
-      margin-bottom: 10px;
-      background: white;
-      border-radius: 6px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-    }
-    .highlight {
-      background: #fff3cd;
-      transition: background 1s ease;
+      border-bottom: 1px solid #ccc;
     }
   </style>
 </head>
 <body>
-  <header>
-    <input id="searchBar" type="text" placeholder="Search items..." />
-    <input id="jumpTo" type="number" placeholder="Go to item #" min="1" />
-  </header>
 
-  <div id="itemList"></div>
+  <h1>Search Results</h1>
+
+  <!-- Simulated Search Input -->
+  <input type="text" id="searchInput" placeholder="Type your search..." style="padding: 8px; width: 100%; max-width: 300px; margin-bottom: 20px;">
+  <button id="goButton">Go</button>
+
+  <!-- Simulated Items -->
+  <div id="results">
+    <!-- Placeholder items for scrolling -->
+    <div class="item">Item #1</div>
+    <div class="item">Item #2</div>
+    <div class="item">Item #3</div>
+    <div class="item">Item #4</div>
+    <div class="item">Item #5</div>
+    <div class="item">Item #6</div>
+    <div class="item">Item #7</div>
+    <div class="item">Item #8</div>
+    <div class="item">Item #9</div>
+    <div class="item">Item #10</div>
+    <div class="item">Item #11</div>
+    <div class="item">Item #12</div>
+    <div class="item">Item #13</div>
+    <div class="item">Item #14</div>
+    <div class="item">Item #15</div>
+    <div class="item">Item #16</div>
+    <div class="item">Item #17</div>
+    <div class="item">Item #18</div>
+    <div class="item">Item #19</div>
+    <div class="item">Item #20</div>
+    <!-- Add more as needed -->
+  </div>
 
   <script>
-    const itemList = document.getElementById("itemList");
-    const searchBar = document.getElementById("searchBar");
-    const jumpTo = document.getElementById("jumpTo");
-    const maxItems = 1000;
+    const SCROLL_STORAGE_KEY = 'lastScrollPosition';
+    const SEARCH_STORAGE_KEY = 'lastSearchTerm';
 
-    let items = [];
-    let filteredItems = [];
+    const searchInput = document.getElementById('searchInput');
+    const goButton = document.getElementById('goButton');
 
-    function generateItems() {
-      items = [];
-      for (let i = 1; i <= maxItems; i++) {
-        items.push({ id: i, title: `Item number ${i}` });
-      }
-    }
-
-    function getSearchKey() {
-      return `search::${searchBar.value.toLowerCase().trim()}`;
-    }
-
-    function saveScrollPosition() {
-      const key = getSearchKey();
-      const data = {
-        scrollTop: itemList.scrollTop,
-        jumpInput: jumpTo.value
-      };
-      localStorage.setItem(key, JSON.stringify(data));
-    }
-
-    function loadScrollPosition() {
-      const key = getSearchKey();
-      const saved = localStorage.getItem(key);
-      if (saved) {
-        const { scrollTop, jumpInput } = JSON.parse(saved);
-        setTimeout(() => {
-          itemList.scrollTop = scrollTop || 0;
-          jumpTo.value = jumpInput || "";
-        }, 50);
-      }
-    }
-
-    function renderItems() {
-      const term = searchBar.value.toLowerCase().trim();
-      filteredItems = items.filter(item =>
-        item.title.toLowerCase().includes(term)
-      );
-
-      itemList.innerHTML = "";
-      for (const item of filteredItems) {
-        const div = document.createElement("div");
-        div.className = "item";
-        div.id = `item-${item.id}`;
-        div.textContent = item.title;
-        itemList.appendChild(div);
-      }
-    }
-
-    function jumpToItem(num) {
-      const target = document.getElementById(`item-${num}`);
-      if (target) {
-        target.scrollIntoView({ behavior: "smooth", block: "center" });
-        target.classList.add("highlight");
-        setTimeout(() => target.classList.remove("highlight"), 1500);
-      } else {
-        alert("Item not found in current search results.");
-      }
-    }
-
-    // Event listeners
-    searchBar.addEventListener("input", () => {
-      renderItems();
-      loadScrollPosition();
+    // Save scroll position before unload
+    window.addEventListener('beforeunload', () => {
+      sessionStorage.setItem(SCROLL_STORAGE_KEY, window.scrollY);
+      sessionStorage.setItem(SEARCH_STORAGE_KEY, searchInput.value);
     });
 
-    itemList.addEventListener("scroll", () => {
-      saveScrollPosition();
-    });
+    // Create Resume Button
+    function createResumeButton() {
+      const btn = document.createElement('button');
+      btn.textContent = 'Resume where you left off?';
+      btn.style.position = 'fixed';
+      btn.style.bottom = '20px';
+      btn.style.right = '20px';
+      btn.style.padding = '10px 16px';
+      btn.style.fontSize = '16px';
+      btn.style.borderRadius = '8px';
+      btn.style.border = 'none';
+      btn.style.backgroundColor = '#007bff';
+      btn.style.color = 'white';
+      btn.style.cursor = 'pointer';
+      btn.style.boxShadow = '0 2px 6px rgba(0,0,0,0.2)';
+      btn.style.zIndex = '9999';
 
-    jumpTo.addEventListener("keydown", e => {
-      if (e.key === "Enter") {
-        const val = parseInt(jumpTo.value);
-        if (!isNaN(val)) {
-          jumpToItem(val);
+      btn.onclick = () => {
+        const scrollPos = sessionStorage.getItem(SCROLL_STORAGE_KEY);
+        if (scrollPos) {
+          window.scrollTo(0, parseInt(scrollPos, 10));
         }
+        btn.remove();
+      };
+
+      document.body.appendChild(btn);
+    }
+
+    // On Load
+    window.addEventListener('load', () => {
+      const savedScroll = sessionStorage.getItem(SCROLL_STORAGE_KEY);
+      const savedSearch = sessionStorage.getItem(SEARCH_STORAGE_KEY);
+
+      if (savedSearch) {
+        searchInput.value = savedSearch;
+      }
+
+      if (savedScroll && parseInt(savedScroll, 10) > 100) {
+        createResumeButton();
       }
     });
 
-    jumpTo.addEventListener("input", saveScrollPosition);
-    searchBar.addEventListener("input", saveScrollPosition);
-
-    // Init
-    generateItems();
-    renderItems();
-    loadScrollPosition();
+    // Trigger new search (dummy for now)
+    goButton.addEventListener('click', () => {
+      alert('New search triggered: ' + searchInput.value);
+      sessionStorage.setItem(SEARCH_STORAGE_KEY, searchInput.value);
+    });
   </script>
 </body>
 </html>
