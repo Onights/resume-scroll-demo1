@@ -15,7 +15,7 @@
     #jumpInput {
       padding: 10px;
       font-size: 16px;
-      width: 200px;
+      width: 220px;
       margin-bottom: 15px;
       border: 1px solid #ccc;
       border-radius: 4px;
@@ -31,6 +31,7 @@
       border-radius: 6px;
       padding: 10px;
       box-shadow: 0 2px 5px rgb(0 0 0 / 0.1);
+      scroll-behavior: smooth;
     }
     .item {
       padding: 8px 12px;
@@ -40,6 +41,38 @@
     .highlight {
       background-color: #fffae6;
       transition: background-color 1.5s ease;
+    }
+    /* Resume prompt styling */
+    #resumePrompt {
+      position: fixed;
+      top: 20%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: white;
+      border: 1px solid #ccc;
+      padding: 20px 30px;
+      border-radius: 8px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      font-size: 16px;
+      z-index: 1000;
+      width: 300px;
+      text-align: center;
+    }
+    #resumePrompt button {
+      margin: 10px 15px 0 15px;
+      padding: 8px 20px;
+      font-size: 14px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    #resumeYes {
+      background-color: #0074cc;
+      color: white;
+    }
+    #resumeNo {
+      background-color: #ddd;
+      color: #444;
     }
   </style>
 </head>
@@ -55,6 +88,13 @@
 
   <div id="itemsContainer" tabindex="0" aria-label="Scrollable list of items"></div>
 
+  <!-- Resume prompt (hidden by default) -->
+  <div id="resumePrompt" style="display:none;">
+    <p>Would you like to resume where you left off?</p>
+    <button id="resumeYes">Yes</button>
+    <button id="resumeNo">No</button>
+  </div>
+
   <script>
     const maxItems = 1000;
     const container = document.getElementById("itemsContainer");
@@ -68,7 +108,7 @@
       container.appendChild(div);
     }
 
-    // Handle jump on Enter key press
+    // Jump to item on Enter key press
     const jumpInput = document.getElementById("jumpInput");
     jumpInput.addEventListener("keydown", function (e) {
       if (e.key === "Enter") {
@@ -88,12 +128,43 @@
       }
     });
 
-    // Optional: Restore scroll position & input value on page load from localStorage
+    // Resume prompt elements
+    const resumePrompt = document.getElementById("resumePrompt");
+    const resumeYesBtn = document.getElementById("resumeYes");
+    const resumeNoBtn = document.getElementById("resumeNo");
+
+    // Show resume prompt if scroll position saved
     window.addEventListener("load", () => {
       const savedScrollTop = localStorage.getItem("scrollTop");
       const savedJumpVal = localStorage.getItem("jumpInputVal");
-      if (savedScrollTop) container.scrollTop = parseInt(savedScrollTop);
+      if (savedScrollTop !== null) {
+        resumePrompt.style.display = "block";
+      } else {
+        // No saved scroll, just restore jump input value if any
+        if (savedJumpVal) jumpInput.value = savedJumpVal;
+      }
+    });
+
+    // Resume scroll if user clicks Yes
+    resumeYesBtn.addEventListener("click", () => {
+      const savedScrollTop = localStorage.getItem("scrollTop");
+      if (savedScrollTop !== null) {
+        container.scrollTop = parseInt(savedScrollTop);
+      }
+      // Restore jump input value as well
+      const savedJumpVal = localStorage.getItem("jumpInputVal");
       if (savedJumpVal) jumpInput.value = savedJumpVal;
+
+      resumePrompt.style.display = "none";
+    });
+
+    // Clear saved scroll and start fresh if user clicks No
+    resumeNoBtn.addEventListener("click", () => {
+      localStorage.removeItem("scrollTop");
+      localStorage.removeItem("jumpInputVal");
+      container.scrollTop = 0;
+      jumpInput.value = "";
+      resumePrompt.style.display = "none";
     });
 
     // Save scroll position and input value on scroll and input change
