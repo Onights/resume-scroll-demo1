@@ -1,108 +1,152 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Resume Scroll Demo</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      line-height: 1.6;
-      margin: 0;
-      padding: 0;
-    }
-
-    header {
-      position: sticky;
-      top: 0;
-      background: #222;
-      color: white;
-      padding: 1rem;
-      z-index: 1000;
-    }
-
-    .container {
-      padding: 1rem;
-    }
-
-    .item {
-      padding: 1rem;
-      margin: 1rem 0;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-    }
-
-    input[type="text"] {
-      padding: 0.5rem;
-      font-size: 1rem;
-      width: 100%;
-      max-width: 400px;
-      margin-top: 1rem;
-    }
-
-    .spacer {
-      height: 2000px;
-    }
-  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Scroll Resume + Search Demo</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto;
+      margin: 0;
+      background: #f8f8f8;
+    }
+    header {
+      position: sticky;
+      top: 0;
+      background: white;
+      padding: 12px 16px;
+      border-bottom: 1px solid #ccc;
+      display: flex;
+      gap: 10px;
+      z-index: 10;
+    }
+    input {
+      padding: 8px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      flex: 1;
+    }
+    #itemList {
+      height: calc(100vh - 60px);
+      overflow-y: scroll;
+      padding: 20px;
+    }
+    .item {
+      padding: 10px;
+      margin-bottom: 10px;
+      background: white;
+      border-radius: 6px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+    .highlight {
+      background: #fff3cd;
+      transition: background 1s ease;
+    }
+  </style>
 </head>
 <body>
-  <header>
-    <h1>Search Results</h1>
-    <input type="text" id="searchInput" placeholder="Search term..." />
-  </header>
+  <header>
+    <input id="searchBar" type="text" placeholder="Search items..." />
+    <input id="jumpTo" type="number" placeholder="Go to item #" min="1" />
+  </header>
 
-  <div class="container">
-    <!-- Dummy content for scrolling -->
-    <div class="item">Item 1</div>
-    <div class="item">Item 2</div>
-    <div class="item">Item 3</div>
-    <div class="item">Item 4</div>
-    <div class="item">Item 5</div>
-    <div class="item">Item 6</div>
-    <div class="item">Item 7</div>
-    <div class="item">Item 8</div>
-    <div class="item">Item 9</div>
-    <div class="item">Item 10</div>
-    <div class="item">Item 11</div>
-    <div class="item">Item 12</div>
-    <div class="item">Item 13</div>
-    <div class="item">Item 14</div>
-    <div class="item">Item 15</div>
-    <div class="item">Item 16</div>
-    <div class="item">Item 17</div>
-    <div class="item">Item 18</div>
-    <div class="item">Item 19</div>
-    <div class="item">Item 20</div>
-  </div>
+  <div id="itemList"></div>
 
-  <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      const savedScroll = localStorage.getItem("savedScrollPosition");
-      const savedSearch = localStorage.getItem("savedSearchTerm");
+  <script>
+    const itemList = document.getElementById("itemList");
+    const searchBar = document.getElementById("searchBar");
+    const jumpTo = document.getElementById("jumpTo");
+    const maxItems = 1000;
 
-      if (savedScroll !== null) {
-        const shouldResume = confirm("Would you like to resume where you left off?");
-        if (shouldResume) {
-          window.scrollTo(0, parseInt(savedScroll, 10));
-        }
-      }
+    let items = [];
+    let filteredItems = [];
 
-      // Save scroll position on unload
-      window.addEventListener("beforeunload", function () {
-        localStorage.setItem("savedScrollPosition", window.scrollY);
-      });
+    function generateItems() {
+      items = [];
+      for (let i = 1; i <= maxItems; i++) {
+        items.push({ id: i, title: `Item number ${i}` });
+      }
+    }
 
-      // Save and restore search input
-      const searchInput = document.querySelector("#searchInput");
-      if (searchInput) {
-        if (savedSearch) {
-          searchInput.value = savedSearch;
-        }
-        searchInput.addEventListener("input", function () {
-          localStorage.setItem("savedSearchTerm", searchInput.value);
-        });
-      }
-    });
-  </script>
+    function getSearchKey() {
+      return `search::${searchBar.value.toLowerCase().trim()}`;
+    }
+
+    function saveScrollPosition() {
+      const key = getSearchKey();
+      const data = {
+        scrollTop: itemList.scrollTop,
+        jumpInput: jumpTo.value
+      };
+      localStorage.setItem(key, JSON.stringify(data));
+    }
+
+    function loadScrollPosition() {
+      const key = getSearchKey();
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        const { scrollTop, jumpInput } = JSON.parse(saved);
+        setTimeout(() => {
+          itemList.scrollTop = scrollTop || 0;
+          jumpTo.value = jumpInput || "";
+        }, 50);
+      }
+    }
+
+    function renderItems() {
+      const term = searchBar.value.toLowerCase().trim();
+      filteredItems = items.filter(item =>
+        item.title.toLowerCase().includes(term)
+      );
+
+      itemList.innerHTML = "";
+      for (const item of filteredItems) {
+        const div = document.createElement("div");
+        div.className = "item";
+        div.id = `item-${item.id}`;
+        div.textContent = item.title;
+        itemList.appendChild(div);
+      }
+    }
+
+    function jumpToItem(num) {
+      const target = document.getElementById(`item-${num}`);
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth", block: "center" });
+        target.classList.add("highlight");
+        setTimeout(() => target.classList.remove("highlight"), 1500);
+      } else {
+        alert("Item not found in current search results.");
+      }
+    }
+
+    // Event listeners
+    searchBar.addEventListener("input", () => {
+      renderItems();
+      loadScrollPosition();
+    });
+
+    itemList.addEventListener("scroll", () => {
+      saveScrollPosition();
+    });
+
+    jumpTo.addEventListener("keydown", e => {
+      if (e.key === "Enter") {
+        const val = parseInt(jumpTo.value);
+        if (!isNaN(val)) {
+          jumpToItem(val);
+        }
+      }
+    });
+
+    jumpTo.addEventListener("input", saveScrollPosition);
+    searchBar.addEventListener("input", saveScrollPosition);
+
+    // Init
+    generateItems();
+    renderItems();
+    loadScrollPosition();
+  </script>
 </body>
 </html>
