@@ -3,116 +3,105 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Scroll Resume Demo</title>
+  <title>Resume Scroll Demo</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       line-height: 1.6;
-      padding: 20px;
-      max-width: 800px;
-      margin: auto;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      background: #222;
+      color: white;
+      padding: 1rem;
+      z-index: 1000;
+    }
+
+    .container {
+      padding: 1rem;
     }
 
     .item {
-      margin-bottom: 40px;
-      padding: 10px;
-      border-bottom: 1px solid #ccc;
+      padding: 1rem;
+      margin: 1rem 0;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    input[type="text"] {
+      padding: 0.5rem;
+      font-size: 1rem;
+      width: 100%;
+      max-width: 400px;
+      margin-top: 1rem;
+    }
+
+    .spacer {
+      height: 2000px;
     }
   </style>
 </head>
 <body>
+  <header>
+    <h1>Search Results</h1>
+    <input type="text" id="searchInput" placeholder="Search term..." />
+  </header>
 
-  <h1>Search Results</h1>
-
-  <!-- Simulated Search Input -->
-  <input type="text" id="searchInput" placeholder="Type your search..." style="padding: 8px; width: 100%; max-width: 300px; margin-bottom: 20px;">
-  <button id="goButton">Go</button>
-
-  <!-- Simulated Items -->
-  <div id="results">
-    <!-- Placeholder items for scrolling -->
-    <div class="item">Item #1</div>
-    <div class="item">Item #2</div>
-    <div class="item">Item #3</div>
-    <div class="item">Item #4</div>
-    <div class="item">Item #5</div>
-    <div class="item">Item #6</div>
-    <div class="item">Item #7</div>
-    <div class="item">Item #8</div>
-    <div class="item">Item #9</div>
-    <div class="item">Item #10</div>
-    <div class="item">Item #11</div>
-    <div class="item">Item #12</div>
-    <div class="item">Item #13</div>
-    <div class="item">Item #14</div>
-    <div class="item">Item #15</div>
-    <div class="item">Item #16</div>
-    <div class="item">Item #17</div>
-    <div class="item">Item #18</div>
-    <div class="item">Item #19</div>
-    <div class="item">Item #20</div>
-    <!-- Add more as needed -->
+  <div class="container">
+    <!-- Dummy content for scrolling -->
+    <div class="item">Item 1</div>
+    <div class="item">Item 2</div>
+    <div class="item">Item 3</div>
+    <div class="item">Item 4</div>
+    <div class="item">Item 5</div>
+    <div class="item">Item 6</div>
+    <div class="item">Item 7</div>
+    <div class="item">Item 8</div>
+    <div class="item">Item 9</div>
+    <div class="item">Item 10</div>
+    <div class="item">Item 11</div>
+    <div class="item">Item 12</div>
+    <div class="item">Item 13</div>
+    <div class="item">Item 14</div>
+    <div class="item">Item 15</div>
+    <div class="item">Item 16</div>
+    <div class="item">Item 17</div>
+    <div class="item">Item 18</div>
+    <div class="item">Item 19</div>
+    <div class="item">Item 20</div>
   </div>
 
   <script>
-    const SCROLL_STORAGE_KEY = 'lastScrollPosition';
-    const SEARCH_STORAGE_KEY = 'lastSearchTerm';
+    document.addEventListener("DOMContentLoaded", function () {
+      const savedScroll = localStorage.getItem("savedScrollPosition");
+      const savedSearch = localStorage.getItem("savedSearchTerm");
 
-    const searchInput = document.getElementById('searchInput');
-    const goButton = document.getElementById('goButton');
-
-    // Save scroll position before unload
-    window.addEventListener('beforeunload', () => {
-      sessionStorage.setItem(SCROLL_STORAGE_KEY, window.scrollY);
-      sessionStorage.setItem(SEARCH_STORAGE_KEY, searchInput.value);
-    });
-
-    // Create Resume Button
-    function createResumeButton() {
-      const btn = document.createElement('button');
-      btn.textContent = 'Resume where you left off?';
-      btn.style.position = 'fixed';
-      btn.style.bottom = '20px';
-      btn.style.right = '20px';
-      btn.style.padding = '10px 16px';
-      btn.style.fontSize = '16px';
-      btn.style.borderRadius = '8px';
-      btn.style.border = 'none';
-      btn.style.backgroundColor = '#007bff';
-      btn.style.color = 'white';
-      btn.style.cursor = 'pointer';
-      btn.style.boxShadow = '0 2px 6px rgba(0,0,0,0.2)';
-      btn.style.zIndex = '9999';
-
-      btn.onclick = () => {
-        const scrollPos = sessionStorage.getItem(SCROLL_STORAGE_KEY);
-        if (scrollPos) {
-          window.scrollTo(0, parseInt(scrollPos, 10));
+      if (savedScroll !== null) {
+        const shouldResume = confirm("Would you like to resume where you left off?");
+        if (shouldResume) {
+          window.scrollTo(0, parseInt(savedScroll, 10));
         }
-        btn.remove();
-      };
-
-      document.body.appendChild(btn);
-    }
-
-    // On Load
-    window.addEventListener('load', () => {
-      const savedScroll = sessionStorage.getItem(SCROLL_STORAGE_KEY);
-      const savedSearch = sessionStorage.getItem(SEARCH_STORAGE_KEY);
-
-      if (savedSearch) {
-        searchInput.value = savedSearch;
       }
 
-      if (savedScroll && parseInt(savedScroll, 10) > 100) {
-        createResumeButton();
-      }
-    });
+      // Save scroll position on unload
+      window.addEventListener("beforeunload", function () {
+        localStorage.setItem("savedScrollPosition", window.scrollY);
+      });
 
-    // Trigger new search (dummy for now)
-    goButton.addEventListener('click', () => {
-      alert('New search triggered: ' + searchInput.value);
-      sessionStorage.setItem(SEARCH_STORAGE_KEY, searchInput.value);
+      // Save and restore search input
+      const searchInput = document.querySelector("#searchInput");
+      if (searchInput) {
+        if (savedSearch) {
+          searchInput.value = savedSearch;
+        }
+        searchInput.addEventListener("input", function () {
+          localStorage.setItem("savedSearchTerm", searchInput.value);
+        });
+      }
     });
   </script>
 </body>
