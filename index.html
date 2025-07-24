@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resume Scroll + Search Demo</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0 20px;
+    }
+    .search-container {
+      position: sticky;
+      top: 0;
+      background: #fff;
+      padding: 10px 0;
+      z-index: 10;
+      border-bottom: 1px solid #ddd;
+    }
+    .item {
+      padding: 20px;
+      border-bottom: 1px solid #eee;
+    }
+    #resumeBanner {
+      display: none;
+      background: #fffae6;
+      padding: 10px;
+      border: 1px solid #ccc;
+      margin: 10px 0;
+    }
+    button {
+      margin-left: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="search-container">
+    <input type="text" id="search" placeholder="Search products...">
+    <button onclick="clearSession()">Clear Session</button>
+  </div>
+
+  <div id="resumeBanner">
+    <span>Resume your last session?</span>
+    <button onclick="resumeSession()">Yes</button>
+    <button onclick="dismissResume()">No</button>
+  </div>
+
+  <div id="productList"></div>
+
+  <script>
+    const productList = document.getElementById("productList");
+    const searchInput = document.getElementById("search");
+    const resumeBanner = document.getElementById("resumeBanner");
+
+    // Generate dummy products
+    for (let i = 1; i <= 100; i++) {
+      const item = document.createElement("div");
+      item.className = "item";
+      item.textContent = `Product Item #${i}`;
+      productList.appendChild(item);
+    }
+
+    // Save session before unload
+    window.addEventListener("beforeunload", () => {
+      localStorage.setItem("scrollY", window.scrollY);
+      localStorage.setItem("searchQuery", searchInput.value);
+      localStorage.setItem("sessionTime", Date.now());
+    });
+
+    // Show resume banner if session data exists
+    window.addEventListener("DOMContentLoaded", () => {
+      if (localStorage.getItem("scrollY") || localStorage.getItem("searchQuery")) {
+        resumeBanner.style.display = "block";
+      }
+    });
+
+    function resumeSession() {
+      const savedScroll = localStorage.getItem("scrollY");
+      const savedQuery = localStorage.getItem("searchQuery");
+      if (savedQuery) searchInput.value = savedQuery;
+      if (savedScroll) window.scrollTo(0, parseInt(savedScroll));
+      resumeBanner.style.display = "none";
+    }
+
+    function dismissResume() {
+      resumeBanner.style.display = "none";
+    }
+
+    function clearSession() {
+      localStorage.removeItem("scrollY");
+      localStorage.removeItem("searchQuery");
+      localStorage.removeItem("sessionTime");
+      alert("Session cleared.");
+    }
+  </script>
+</body>
+</html> )
