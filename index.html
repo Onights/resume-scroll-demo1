@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Enhanced eBay-Style Resume Scroll & Jump Demo</title>
+<title>Multi-Search Resume Scroll & Jump Demo</title>
 <style>
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
@@ -31,10 +31,10 @@
     font-size: 20px;
     margin: 0;
   }
-  #jumpInput {
+  #searchInput, #jumpInput {
     padding: 8px 12px;
     font-size: 14px;
-    width: 150px;
+    width: 180px;
     border: 1px solid #ccc;
     border-radius: 4px;
     outline-offset: 2px;
@@ -155,7 +155,7 @@
       align-items: stretch;
       gap: 8px;
     }
-    #jumpInput, #filterCondition {
+    #searchInput, #jumpInput, #filterCondition {
       width: 100%;
     }
   }
@@ -163,7 +163,13 @@
 </head>
 <body>
 <header>
-  <h2>eBay-Style Resume Scroll & Jump Demo</h2>
+  <h2>Multi-Search Resume Scroll & Jump Demo</h2>
+  <input
+    type="text"
+    id="searchInput"
+    placeholder="Search term"
+    aria-label="Search term input"
+  />
   <input
     type="number"
     id="jumpInput"
@@ -183,7 +189,7 @@
 
 <!-- Resume prompt (hidden by default) -->
 <div id="resumePrompt" style="display:none;">
-  <p>Would you like to resume where you left off?</p>
+  <p>Would you like to resume where you left off for this search?</p>
   <button id="resumeYes">Yes</button>
   <button id="resumeNo">No</button>
 </div>
@@ -193,34 +199,54 @@
   const container = document.getElementById("itemsContainer");
   const jumpInput = document.getElementById("jumpInput");
   const filterSelect = document.getElementById("filterCondition");
+  const searchInput = document.getElementById("searchInput");
   const resumePrompt = document.getElementById("resumePrompt");
   const resumeYesBtn = document.getElementById("resumeYes");
   const resumeNoBtn = document.getElementById("resumeNo");
 
-  // Generate dummy items data
-  // Using some placeholders for images and randomized condition & prices
-  const itemsData = [];
+  // Dummy items data, static but simulating different items
   const placeholderImages = [
     "https://via.placeholder.com/240x140?text=Watch+1",
     "https://via.placeholder.com/240x140?text=Watch+2",
     "https://via.placeholder.com/240x140?text=Watch+3",
     "https://via.placeholder.com/240x140?text=Watch+4",
   ];
-  for(let i = 1; i <= maxItems; i++) {
-    itemsData.push({
-      id: i,
-      title: `Vintage Watch Model ${i}`,
-      price: (Math.random() * 500 + 50).toFixed(2),
-      condition: Math.random() > 0.5 ? "new" : "used",
-      image: placeholderImages[i % placeholderImages.length],
-    });
+
+  function generateItems(searchTerm = "") {
+    // Items "filtered" by searchTerm: simulate by only showing items where id % 10 matches char code sum mod 10
+    const filtered = [];
+    for(let i = 1; i <= maxItems; i++) {
+      let include = true;
+      if(searchTerm.trim().length > 0) {
+        // Simple hash to simulate filtering by search term
+        const sum = [...searchTerm.toLowerCase()].reduce((acc,c)=>acc + c.charCodeAt(0),0);
+        include = (i % 10) === (sum % 10);
+      }
+      if(include) {
+        filtered.push({
+          id: i,
+          title: `Vintage Watch Model ${i}`,
+          price: (Math.random() * 500 + 50).toFixed(2),
+          condition: Math.random() > 0.5 ? "new" : "used",
+          image: placeholderImages[i % placeholderImages.length],
+        });
+      }
+    }
+    return filtered;
   }
 
-  // Function to create and display items filtered by condition
+  let itemsData = generateItems("");
+
+  function getSearchKey() {
+    // Compose a unique key based on current search term and filter
+    return `search::${searchInput.value.trim().toLowerCase()}::filter::${filterSelect.value}`;
+  }
+
   function renderItems(conditionFilter = "all") {
     container.innerHTML = "";
-    const filteredItems = conditionFilter === "all" 
-      ? itemsData 
+    // Filter itemsData by condition
+    const filteredItems = conditionFilter === "all"
+      ? itemsData
       : itemsData.filter(item => item.condition === conditionFilter);
 
     filteredItems.forEach(item => {
@@ -240,29 +266,86 @@
     });
   }
 
-  // Initial render with all items
-  renderItems();
+  function saveState() {
+    const key = getSearchKey();
+    const state = {
+      scrollTop: container.scrollTop,
+      jumpInputVal: jumpInput.value,
+      searchTerm: searchInput.value.trim(),
+      filter: filterSelect.value,
+    };
+    localStorage.setItem(key, JSON.stringify(state));
+  }
 
-  // Jump to item on Enter key press
+  function loadState() {
+    const key = getSearchKey();
+    const saved = localStorage.getItem(key);
+    if (saved) {
+      return JSON.parse(saved);
+    }
+    return null;
+  }
+
+  function clearState() {
+    const key = getSearchKey();
+    localStorage.removeItem(key);
+  }
+
+  function applyState(state) {
+    if (!state) return;
+    jumpInput.value = state.jumpInputVal || "";
+    container.scrollTop = state.scrollTop || 0;
+  }
+
+  function promptResume(state) {
+    resumePrompt.style.display = "block";
+
+    resumeYesBtn.onclick = () => {
+      applyState(state);
+      resumePrompt.style.display = "none";
+    };
+
+    resumeNoBtn.onclick = () => {
+      clearState();
+      jumpInput.value = "";
+      container.scrollTop = 0;
+      resumePrompt.style.display = "none";
+    };
+  }
+
+  // Initial setup
+  function init() {
+    itemsData = generateItems(searchInput.value);
+    renderItems(filterSelect.value);
+
+    const savedState = loadState();
+    if (savedState) {
+      promptResume(savedState);
+    }
+  }
+
+  // Event listeners
   jumpInput.addEventListener("keydown", function (e) {
     if (e.key === "Enter") {
       const val = parseInt(jumpInput.value);
-      // Adjust max based on filtered items count
-      let maxVal = itemsData.length;
-      if(filterSelect.value !== "all") {
-        maxVal = itemsData.filter(i => i.condition === filterSelect.value).length;
-      }
+      // Because itemsData filtered by search term and condition, check if item exists and visible
+      const filteredItems = filterSelect.value === "all"
+        ? itemsData
+        : itemsData.filter(i => i.condition === filterSelect.value);
+
       if (!isNaN(val) && val >= 1 && val <= maxItems) {
-        // Because filter may hide items, check if target exists visible
-        const target = document.getElementById("item-" + val);
-        if (target && target.offsetParent !== null) {
-          target.scrollIntoView({ behavior: "smooth", block: "center" });
-          target.classList.add("highlight");
-          setTimeout(() => {
-            target.classList.remove("highlight");
-          }, 1500);
+        // Verify if item id exists in filtered list
+        if (filteredItems.some(i => i.id === val)) {
+          const target = document.getElementById("item-" + val);
+          if (target) {
+            target.scrollIntoView({ behavior: "smooth", block: "center" });
+            target.classList.add("highlight");
+            setTimeout(() => {
+              target.classList.remove("highlight");
+            }, 1500);
+          }
         } else {
-          alert("Item number " + val + " is not visible due to current filter.");
+          alert("Item number " + val + " is not visible with current filters/search.");
         }
       } else {
         alert("Please enter a number between 1 and " + maxItems);
@@ -270,46 +353,29 @@
     }
   });
 
-  // Filter change event
   filterSelect.addEventListener("change", () => {
-    renderItems(filterSelect.value);
+    init();
   });
 
-  // Resume prompt handling
-  window.addEventListener("load", () => {
-    const savedScrollTop = localStorage.getItem("scrollTop");
-    const savedJumpVal = localStorage.getItem("jumpInputVal");
-    if (savedScrollTop !== null) {
-      resumePrompt.style.display = "block";
-    } else {
-      if (savedJumpVal) jumpInput.value = savedJumpVal;
-    }
+  searchInput.addEventListener("change", () => {
+    init();
   });
 
-  resumeYesBtn.addEventListener("click", () => {
-    const savedScrollTop = localStorage.getItem("scrollTop");
-    if (savedScrollTop !== null) {
-      container.scrollTop = parseInt(savedScrollTop);
-    }
-    const savedJumpVal = localStorage.getItem("jumpInputVal");
-    if (savedJumpVal) jumpInput.value = savedJumpVal;
-    resumePrompt.style.display = "none";
-  });
-
-  resumeNoBtn.addEventListener("click", () => {
-    localStorage.removeItem("scrollTop");
-    localStorage.removeItem("jumpInputVal");
-    container.scrollTop = 0;
-    jumpInput.value = "";
-    resumePrompt.style.display = "none";
-  });
-
-  // Save scroll and input state
+  // Save scroll & input state on scroll/input
   container.addEventListener("scroll", () => {
-    localStorage.setItem("scrollTop", container.scrollTop);
+    saveState();
   });
   jumpInput.addEventListener("input", () => {
-    localStorage.setItem("jumpInputVal", jumpInput.value);
+    saveState();
+  });
+  searchInput.addEventListener("input", () => {
+    // Save search input also on typing (for faster save)
+    saveState();
+  });
+
+  // Initialize on page load
+  window.addEventListener("load", () => {
+    init();
   });
 </script>
 </body>
