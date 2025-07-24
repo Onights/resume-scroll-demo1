@@ -28,13 +28,6 @@
       font-size: 15px;
       border: 1px solid #ccc;
       border-radius: 6px;
-      outline-offset: 2px;
-      outline-color: #0074e4;
-      transition: outline-color 0.2s ease;
-    }
-    input[type="text"]:focus,
-    input[type="number"]:focus {
-      outline-color: #005bb5;
     }
     #itemList {
       height: calc(100vh - 56px);
@@ -57,6 +50,34 @@
       background-color: #ffeaa7;
       transition: background-color 1s ease;
     }
+    #resumePrompt {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #fff;
+      padding: 16px 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+      display: none;
+      z-index: 1000;
+    }
+    #resumePrompt button {
+      margin-left: 12px;
+      padding: 6px 14px;
+      font-size: 14px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    #resumePrompt button:first-child {
+      background: #0074e4;
+      color: #fff;
+    }
+    #resumePrompt button:last-child {
+      background: #ddd;
+      color: #333;
+    }
   </style>
 </head>
 <body>
@@ -64,19 +85,29 @@
     <input id="searchBar" type="text" placeholder="Search items..." autocomplete="off" />
     <input id="jumpTo" type="number" placeholder="Go to item #" min="1" />
   </header>
+
+  <div id="resumePrompt">
+    Resume where you left off?
+    <button id="resumeYes">Yes</button>
+    <button id="resumeNo">No</button>
+  </div>
+
   <div id="itemList" tabindex="0" aria-label="List of items"></div>
 
   <script>
     const itemList = document.getElementById('itemList');
     const searchBar = document.getElementById('searchBar');
     const jumpTo = document.getElementById('jumpTo');
+    const resumePrompt = document.getElementById('resumePrompt');
+    const resumeYes = document.getElementById('resumeYes');
+    const resumeNo = document.getElementById('resumeNo');
     const MAX_ITEMS = 1000;
-    let items = [];
-    let filteredItems = [];
+
+    let items = [], filteredItems = [];
 
     function generateItems() {
       items = [];
-      for(let i = 1; i <= MAX_ITEMS; i++) {
+      for (let i = 1; i <= MAX_ITEMS; i++) {
         items.push({ id: i, title: `Item ${i}` });
       }
     }
@@ -93,25 +124,6 @@
       }));
     }
 
-    function loadState() {
-      const key = getStorageKey();
-      const saved = localStorage.getItem(key);
-      if(saved) {
-        try {
-          const { scrollTop, jumpValue } = JSON.parse(saved);
-          setTimeout(() => {
-            itemList.scrollTop = scrollTop || 0;
-            jumpTo.value = jumpValue || '';
-          }, 50);
-        } catch(e) {
-          // invalid JSON fallback
-        }
-      } else {
-        itemList.scrollTop = 0;
-        jumpTo.value = '';
-      }
-    }
-
     function renderList() {
       const term = searchBar.value.trim().toLowerCase();
       filteredItems = items.filter(item => item.title.toLowerCase().includes(term));
@@ -125,9 +137,38 @@
       });
     }
 
+    function showResumePrompt(data) {
+      resumePrompt.style.display = 'block';
+
+      resumeYes.onclick = () => {
+        resumePrompt.style.display = 'none';
+        setTimeout(() => {
+          itemList.scrollTop = data.scrollTop || 0;
+          jumpTo.value = data.jumpValue || '';
+        }, 50);
+      };
+
+      resumeNo.onclick = () => {
+        resumePrompt.style.display = 'none';
+        localStorage.removeItem(getStorageKey());
+      };
+    }
+
+    function checkResumePrompt() {
+      const saved = localStorage.getItem(getStorageKey());
+      if (saved) {
+        try {
+          const data = JSON.parse(saved);
+          showResumePrompt(data);
+        } catch (e) {
+          // ignore
+        }
+      }
+    }
+
     function jumpToItem(num) {
       const target = document.getElementById(`item-${num}`);
-      if(target) {
+      if (target) {
         target.scrollIntoView({ behavior: 'smooth', block: 'center' });
         target.classList.add('highlight');
         setTimeout(() => target.classList.remove('highlight'), 1500);
@@ -136,23 +177,20 @@
       }
     }
 
-    // Event Listeners
+    // Listeners
     searchBar.addEventListener('input', () => {
       renderList();
-      loadState();
+      checkResumePrompt();
       saveState();
     });
 
-    itemList.addEventListener('scroll', () => {
-      saveState();
-    });
-
+    itemList.addEventListener('scroll', saveState);
     jumpTo.addEventListener('input', saveState);
 
     jumpTo.addEventListener('keydown', e => {
-      if(e.key === 'Enter') {
+      if (e.key === 'Enter') {
         const val = parseInt(jumpTo.value, 10);
-        if(val >= 1 && val <= MAX_ITEMS && !isNaN(val)) {
+        if (val >= 1 && val <= MAX_ITEMS && !isNaN(val)) {
           jumpToItem(val);
         } else {
           alert(`Please enter a number between 1 and ${MAX_ITEMS}`);
@@ -160,10 +198,10 @@
       }
     });
 
-    // Initialization
+    // Init
     generateItems();
     renderList();
-    loadState();
+    checkResumePrompt();
   </script>
 </body>
 </html>
