@@ -1,382 +1,152 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Multi-Search Resume Scroll & Jump Demo</title>
-<style>
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-      Oxygen, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
-    margin: 0;
-    background: #f5f5f7;
-    color: #222;
-  }
-  header {
-    position: sticky;
-    top: 0;
-    background: white;
-    padding: 10px 20px;
-    border-bottom: 1px solid #ddd;
-    z-index: 100;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 10px;
-    box-shadow: 0 2px 5px rgb(0 0 0 / 0.1);
-  }
-  header h2 {
-    flex-grow: 1;
-    font-weight: 600;
-    font-size: 20px;
-    margin: 0;
-  }
-  #searchInput, #jumpInput {
-    padding: 8px 12px;
-    font-size: 14px;
-    width: 180px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    outline-offset: 2px;
-    outline-color: #0074cc;
-  }
-  #filterCondition {
-    padding: 8px 12px;
-    font-size: 14px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    background: white;
-    cursor: pointer;
-  }
-  #itemsContainer {
-    height: calc(100vh - 60px);
-    overflow-y: scroll;
-    padding: 15px 20px;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 15px;
-    background: #fff;
-  }
-  .itemCard {
-    background: white;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgb(0 0 0 / 0.05);
-    display: flex;
-    flex-direction: column;
-    transition: box-shadow 0.3s ease;
-    cursor: pointer;
-  }
-  .itemCard:hover {
-    box-shadow: 0 5px 15px rgb(0 0 0 / 0.15);
-  }
-  .itemImage {
-    background: #eaeaea;
-    height: 140px;
-    border-top-left-radius: 8px;
-    border-top-right-radius: 8px;
-    background-size: cover;
-    background-position: center;
-  }
-  .itemDetails {
-    padding: 10px 15px;
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-  }
-  .itemTitle {
-    font-size: 14px;
-    font-weight: 600;
-    margin-bottom: 6px;
-    color: #0074cc;
-    line-height: 1.2;
-  }
-  .itemPrice {
-    font-size: 15px;
-    font-weight: 700;
-    color: #b12704;
-  }
-  .itemCondition {
-    font-size: 12px;
-    color: #555;
-    margin-top: 6px;
-  }
-  .highlight {
-    animation: highlightFade 1.5s ease;
-  }
-  @keyframes highlightFade {
-    0% {
-      background-color: #fff8dc;
-    }
-    100% {
-      background-color: white;
-    }
-  }
-  /* Resume prompt styling */
-  #resumePrompt {
-    position: fixed;
-    top: 20%;
-    left: 50%;
-    transform: translateX(-50%);
-    background: white;
-    border: 1px solid #ccc;
-    padding: 20px 30px;
-    border-radius: 8px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-    font-size: 16px;
-    z-index: 1000;
-    width: 320px;
-    text-align: center;
-  }
-  #resumePrompt button {
-    margin: 10px 15px 0 15px;
-    padding: 8px 20px;
-    font-size: 14px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-  #resumeYes {
-    background-color: #0074cc;
-    color: white;
-  }
-  #resumeNo {
-    background-color: #ddd;
-    color: #444;
-  }
-  @media (max-width: 500px) {
-    #itemsContainer {
-      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-      height: calc(100vh - 100px);
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Scroll Resume + Search Demo</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto;
+      margin: 0;
+      background: #f8f8f8;
     }
     header {
-      flex-direction: column;
-      align-items: stretch;
-      gap: 8px;
+      position: sticky;
+      top: 0;
+      background: white;
+      padding: 12px 16px;
+      border-bottom: 1px solid #ccc;
+      display: flex;
+      gap: 10px;
+      z-index: 10;
     }
-    #searchInput, #jumpInput, #filterCondition {
-      width: 100%;
+    input {
+      padding: 8px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      flex: 1;
     }
-  }
-</style>
+    #itemList {
+      height: calc(100vh - 60px);
+      overflow-y: scroll;
+      padding: 20px;
+    }
+    .item {
+      padding: 10px;
+      margin-bottom: 10px;
+      background: white;
+      border-radius: 6px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+    .highlight {
+      background: #fff3cd;
+      transition: background 1s ease;
+    }
+  </style>
 </head>
 <body>
-<header>
-  <h2>Multi-Search Resume Scroll & Jump Demo</h2>
-  <input
-    type="text"
-    id="searchInput"
-    placeholder="Search term"
-    aria-label="Search term input"
-  />
-  <input
-    type="number"
-    id="jumpInput"
-    placeholder="Go to item #"
-    min="1"
-    max="1000"
-    aria-label="Jump to item number input"
-  />
-  <select id="filterCondition" aria-label="Filter by item condition">
-    <option value="all">All Conditions</option>
-    <option value="new">New</option>
-    <option value="used">Used</option>
-  </select>
-</header>
+  <header>
+    <input id="searchBar" type="text" placeholder="Search items..." />
+    <input id="jumpTo" type="number" placeholder="Go to item #" min="1" />
+  </header>
 
-<div id="itemsContainer" tabindex="0" aria-label="Scrollable list of items"></div>
+  <div id="itemList"></div>
 
-<!-- Resume prompt (hidden by default) -->
-<div id="resumePrompt" style="display:none;">
-  <p>Would you like to resume where you left off for this search?</p>
-  <button id="resumeYes">Yes</button>
-  <button id="resumeNo">No</button>
-</div>
+  <script>
+    const itemList = document.getElementById("itemList");
+    const searchBar = document.getElementById("searchBar");
+    const jumpTo = document.getElementById("jumpTo");
+    const maxItems = 1000;
 
-<script>
-  const maxItems = 1000;
-  const container = document.getElementById("itemsContainer");
-  const jumpInput = document.getElementById("jumpInput");
-  const filterSelect = document.getElementById("filterCondition");
-  const searchInput = document.getElementById("searchInput");
-  const resumePrompt = document.getElementById("resumePrompt");
-  const resumeYesBtn = document.getElementById("resumeYes");
-  const resumeNoBtn = document.getElementById("resumeNo");
+    let items = [];
+    let filteredItems = [];
 
-  // Dummy items data, static but simulating different items
-  const placeholderImages = [
-    "https://via.placeholder.com/240x140?text=Watch+1",
-    "https://via.placeholder.com/240x140?text=Watch+2",
-    "https://via.placeholder.com/240x140?text=Watch+3",
-    "https://via.placeholder.com/240x140?text=Watch+4",
-  ];
-
-  function generateItems(searchTerm = "") {
-    // Items "filtered" by searchTerm: simulate by only showing items where id % 10 matches char code sum mod 10
-    const filtered = [];
-    for(let i = 1; i <= maxItems; i++) {
-      let include = true;
-      if(searchTerm.trim().length > 0) {
-        // Simple hash to simulate filtering by search term
-        const sum = [...searchTerm.toLowerCase()].reduce((acc,c)=>acc + c.charCodeAt(0),0);
-        include = (i % 10) === (sum % 10);
-      }
-      if(include) {
-        filtered.push({
-          id: i,
-          title: `Vintage Watch Model ${i}`,
-          price: (Math.random() * 500 + 50).toFixed(2),
-          condition: Math.random() > 0.5 ? "new" : "used",
-          image: placeholderImages[i % placeholderImages.length],
-        });
+    function generateItems() {
+      items = [];
+      for (let i = 1; i <= maxItems; i++) {
+        items.push({ id: i, title: `Item number ${i}` });
       }
     }
-    return filtered;
-  }
 
-  let itemsData = generateItems("");
-
-  function getSearchKey() {
-    // Compose a unique key based on current search term and filter
-    return `search::${searchInput.value.trim().toLowerCase()}::filter::${filterSelect.value}`;
-  }
-
-  function renderItems(conditionFilter = "all") {
-    container.innerHTML = "";
-    // Filter itemsData by condition
-    const filteredItems = conditionFilter === "all"
-      ? itemsData
-      : itemsData.filter(item => item.condition === conditionFilter);
-
-    filteredItems.forEach(item => {
-      const card = document.createElement("div");
-      card.className = "itemCard";
-      card.id = "item-" + item.id;
-      card.tabIndex = 0;
-      card.innerHTML = `
-        <div class="itemImage" style="background-image: url('${item.image}');"></div>
-        <div class="itemDetails">
-          <div class="itemTitle">${item.title}</div>
-          <div class="itemPrice">$${item.price}</div>
-          <div class="itemCondition">${item.condition.charAt(0).toUpperCase() + item.condition.slice(1)}</div>
-        </div>
-      `;
-      container.appendChild(card);
-    });
-  }
-
-  function saveState() {
-    const key = getSearchKey();
-    const state = {
-      scrollTop: container.scrollTop,
-      jumpInputVal: jumpInput.value,
-      searchTerm: searchInput.value.trim(),
-      filter: filterSelect.value,
-    };
-    localStorage.setItem(key, JSON.stringify(state));
-  }
-
-  function loadState() {
-    const key = getSearchKey();
-    const saved = localStorage.getItem(key);
-    if (saved) {
-      return JSON.parse(saved);
+    function getSearchKey() {
+      return `search::${searchBar.value.toLowerCase().trim()}`;
     }
-    return null;
-  }
 
-  function clearState() {
-    const key = getSearchKey();
-    localStorage.removeItem(key);
-  }
-
-  function applyState(state) {
-    if (!state) return;
-    jumpInput.value = state.jumpInputVal || "";
-    container.scrollTop = state.scrollTop || 0;
-  }
-
-  function promptResume(state) {
-    resumePrompt.style.display = "block";
-
-    resumeYesBtn.onclick = () => {
-      applyState(state);
-      resumePrompt.style.display = "none";
-    };
-
-    resumeNoBtn.onclick = () => {
-      clearState();
-      jumpInput.value = "";
-      container.scrollTop = 0;
-      resumePrompt.style.display = "none";
-    };
-  }
-
-  // Initial setup
-  function init() {
-    itemsData = generateItems(searchInput.value);
-    renderItems(filterSelect.value);
-
-    const savedState = loadState();
-    if (savedState) {
-      promptResume(savedState);
+    function saveScrollPosition() {
+      const key = getSearchKey();
+      const data = {
+        scrollTop: itemList.scrollTop,
+        jumpInput: jumpTo.value
+      };
+      localStorage.setItem(key, JSON.stringify(data));
     }
-  }
 
-  // Event listeners
-  jumpInput.addEventListener("keydown", function (e) {
-    if (e.key === "Enter") {
-      const val = parseInt(jumpInput.value);
-      // Because itemsData filtered by search term and condition, check if item exists and visible
-      const filteredItems = filterSelect.value === "all"
-        ? itemsData
-        : itemsData.filter(i => i.condition === filterSelect.value);
+    function loadScrollPosition() {
+      const key = getSearchKey();
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        const { scrollTop, jumpInput } = JSON.parse(saved);
+        setTimeout(() => {
+          itemList.scrollTop = scrollTop || 0;
+          jumpTo.value = jumpInput || "";
+        }, 50);
+      }
+    }
 
-      if (!isNaN(val) && val >= 1 && val <= maxItems) {
-        // Verify if item id exists in filtered list
-        if (filteredItems.some(i => i.id === val)) {
-          const target = document.getElementById("item-" + val);
-          if (target) {
-            target.scrollIntoView({ behavior: "smooth", block: "center" });
-            target.classList.add("highlight");
-            setTimeout(() => {
-              target.classList.remove("highlight");
-            }, 1500);
-          }
-        } else {
-          alert("Item number " + val + " is not visible with current filters/search.");
-        }
+    function renderItems() {
+      const term = searchBar.value.toLowerCase().trim();
+      filteredItems = items.filter(item =>
+        item.title.toLowerCase().includes(term)
+      );
+
+      itemList.innerHTML = "";
+      for (const item of filteredItems) {
+        const div = document.createElement("div");
+        div.className = "item";
+        div.id = `item-${item.id}`;
+        div.textContent = item.title;
+        itemList.appendChild(div);
+      }
+    }
+
+    function jumpToItem(num) {
+      const target = document.getElementById(`item-${num}`);
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth", block: "center" });
+        target.classList.add("highlight");
+        setTimeout(() => target.classList.remove("highlight"), 1500);
       } else {
-        alert("Please enter a number between 1 and " + maxItems);
+        alert("Item not found in current search results.");
       }
     }
-  });
 
-  filterSelect.addEventListener("change", () => {
-    init();
-  });
+    // Event listeners
+    searchBar.addEventListener("input", () => {
+      renderItems();
+      loadScrollPosition();
+    });
 
-  searchInput.addEventListener("change", () => {
-    init();
-  });
+    itemList.addEventListener("scroll", () => {
+      saveScrollPosition();
+    });
 
-  // Save scroll & input state on scroll/input
-  container.addEventListener("scroll", () => {
-    saveState();
-  });
-  jumpInput.addEventListener("input", () => {
-    saveState();
-  });
-  searchInput.addEventListener("input", () => {
-    // Save search input also on typing (for faster save)
-    saveState();
-  });
+    jumpTo.addEventListener("keydown", e => {
+      if (e.key === "Enter") {
+        const val = parseInt(jumpTo.value);
+        if (!isNaN(val)) {
+          jumpToItem(val);
+        }
+      }
+    });
 
-  // Initialize on page load
-  window.addEventListener("load", () => {
-    init();
-  });
-</script>
+    jumpTo.addEventListener("input", saveScrollPosition);
+    searchBar.addEventListener("input", saveScrollPosition);
+
+    // Init
+    generateItems();
+    renderItems();
+    loadScrollPosition();
+  </script>
 </body>
 </html>
