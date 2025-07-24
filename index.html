@@ -1,98 +1,108 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Resume Scroll + Search Demo</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0 20px;
-    }
-    .search-container {
-      position: sticky;
-      top: 0;
-      background: #fff;
-      padding: 10px 0;
-      z-index: 10;
-      border-bottom: 1px solid #ddd;
-    }
-    .item {
-      padding: 20px;
-      border-bottom: 1px solid #eee;
-    }
-    #resumeBanner {
-      display: none;
-      background: #fffae6;
-      padding: 10px;
-      border: 1px solid #ccc;
-      margin: 10px 0;
-    }
-    button {
-      margin-left: 10px;
-    }
-  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Resume Scroll & Jump Demo</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+        Oxygen, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+      margin: 20px;
+      background: #f5f5f7;
+      color: #222;
+    }
+    #jumpInput {
+      padding: 10px;
+      font-size: 16px;
+      width: 200px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      outline-offset: 2px;
+      outline-color: #0074cc;
+      display: block;
+    }
+    #itemsContainer {
+      height: 600px;
+      overflow-y: scroll;
+      border: 1px solid #ddd;
+      background: #fff;
+      border-radius: 6px;
+      padding: 10px;
+      box-shadow: 0 2px 5px rgb(0 0 0 / 0.1);
+    }
+    .item {
+      padding: 8px 12px;
+      border-bottom: 1px solid #eee;
+      font-size: 14px;
+    }
+    .highlight {
+      background-color: #fffae6;
+      transition: background-color 1.5s ease;
+    }
+  </style>
 </head>
 <body>
-  <div class="search-container">
-    <input type="text" id="search" placeholder="Search products...">
-    <button onclick="clearSession()">Clear Session</button>
-  </div>
+  <h2>Resume Scroll & Jump Demo</h2>
+  <input
+    type="number"
+    id="jumpInput"
+    placeholder="Enter item number (1–1000) and press Enter"
+    min="1"
+    max="1000"
+  />
 
-  <div id="resumeBanner">
-    <span>Resume your last session?</span>
-    <button onclick="resumeSession()">Yes</button>
-    <button onclick="dismissResume()">No</button>
-  </div>
+  <div id="itemsContainer" tabindex="0" aria-label="Scrollable list of items"></div>
 
-  <div id="productList"></div>
+  <script>
+    const maxItems = 1000;
+    const container = document.getElementById("itemsContainer");
 
-  <script>
-    const productList = document.getElementById("productList");
-    const searchInput = document.getElementById("search");
-    const resumeBanner = document.getElementById("resumeBanner");
+    // Generate 1000 items
+    for (let i = 1; i <= maxItems; i++) {
+      const div = document.createElement("div");
+      div.id = "item-" + i;
+      div.className = "item";
+      div.textContent = "Item " + i;
+      container.appendChild(div);
+    }
 
-    // Generate dummy products
-    for (let i = 1; i <= 1000; i++) {
-      const item = document.createElement("div");
-      item.className = "item";
-      item.textContent = `Product Item #${i}`;
-      productList.appendChild(item);
-    }
+    // Handle jump on Enter key press
+    const jumpInput = document.getElementById("jumpInput");
+    jumpInput.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") {
+        const val = parseInt(jumpInput.value);
+        if (!isNaN(val) && val >= 1 && val <= maxItems) {
+          const target = document.getElementById("item-" + val);
+          if (target) {
+            target.scrollIntoView({ behavior: "smooth", block: "center" });
+            target.classList.add("highlight");
+            setTimeout(() => {
+              target.classList.remove("highlight");
+            }, 1500);
+          }
+        } else {
+          alert("Please enter a number between 1 and " + maxItems);
+        }
+      }
+    });
 
-    // Save session before unload
-    window.addEventListener("beforeunload", () => {
-      localStorage.setItem("scrollY", window.scrollY);
-      localStorage.setItem("searchQuery", searchInput.value);
-      localStorage.setItem("sessionTime", Date.now());
-    });
+    // Optional: Restore scroll position & input value on page load from localStorage
+    window.addEventListener("load", () => {
+      const savedScrollTop = localStorage.getItem("scrollTop");
+      const savedJumpVal = localStorage.getItem("jumpInputVal");
+      if (savedScrollTop) container.scrollTop = parseInt(savedScrollTop);
+      if (savedJumpVal) jumpInput.value = savedJumpVal;
+    });
 
-    // Show resume banner if session data exists
-    window.addEventListener("DOMContentLoaded", () => {
-      if (localStorage.getItem("scrollY") || localStorage.getItem("searchQuery")) {
-        resumeBanner.style.display = "block";
-      }
-    });
-
-    function resumeSession() {
-      const savedScroll = localStorage.getItem("scrollY");
-      const savedQuery = localStorage.getItem("searchQuery");
-      if (savedQuery) searchInput.value = savedQuery;
-      if (savedScroll) window.scrollTo(0, parseInt(savedScroll));
-      resumeBanner.style.display = "none";
-    }
-
-    function dismissResume() {
-      resumeBanner.style.display = "none";
-    }
-
-    function clearSession() {
-      localStorage.removeItem("scrollY");
-      localStorage.removeItem("searchQuery");
-      localStorage.removeItem("sessionTime");
-      alert("Session cleared.");
-    }
-  </script>
+    // Save scroll position and input value on scroll and input change
+    container.addEventListener("scroll", () => {
+      localStorage.setItem("scrollTop", container.scrollTop);
+    });
+    jumpInput.addEventListener("input", () => {
+      localStorage.setItem("jumpInputVal", jumpInput.value);
+    });
+  </script>
 </body>
-</html> )
+</html>
